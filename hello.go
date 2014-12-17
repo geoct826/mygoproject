@@ -2,16 +2,17 @@ package hello
 
 import (
     "io"
-    "fmt"
     "html"
     "net/http"
     "appengine"
     "appengine/urlfetch"
     "github.com/gorilla/mux"
+    "html/template"
 )
 
 func handler(w http.ResponseWriter, r* http.Request) {
-    fmt.Fprintf(w, "Hello, World! %q", html.EscapeString(r.URL.Path))
+    t, _ := template.ParseFiles("view/index.html")
+    t.Execute(w, nil)
 }
 
 func copyHeader(dst, src http.Header) {
@@ -48,12 +49,15 @@ func cloudAdminHandler(w http.ResponseWriter, r *http.Request) {
 
 func init() {
     r := mux.NewRouter()
+
+    s1 := r.PathPrefix("/api").Methods("GET").Subrouter()
+    s2 := r.PathPrefix("/api").Methods("POST").Subrouter()
     
+    s1.HandleFunc("/users", userGetHandler)
+    s2.HandleFunc("/users", userPostHandler)
+
     r.HandleFunc("/", handler)
     r.HandleFunc("/{.path:.*}", cloudAdminHandler)
     
     http.Handle("/", r)
-    //http.HandleFunc("/", handler)
-    //http.HandleFunc("/cloudadmin", cloudAdminHandler)
-    //http.HandleFunc("/datastore", cloudAdminHandler)
 }
